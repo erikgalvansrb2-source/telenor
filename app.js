@@ -55,20 +55,32 @@ function initMap() {
 }
 
 function drawReceptionZone() {
-    // Create reception zone polygon (area ≥12km from coast)
-    const receptionZonePolygon = createReceptionZonePolygon();
+    // Create reception zone polygons (areas ≥12km from coast)
+    const receptionAreas = createReceptionZonePolygon();
     
-    // Create the polygon overlay with green semi-transparent fill
-    const receptionOverlay = new google.maps.Polygon({
-        paths: receptionZonePolygon,
-        strokeColor: '#28a745',
-        strokeOpacity: 0.6,
-        strokeWeight: 2,
-        fillColor: '#28a745',
-        fillOpacity: 0.2
+    // Create the polygon overlays with green semi-transparent fill
+    const infoWindow = new google.maps.InfoWindow({
+        content: '<div style="padding: 5px;"><strong>🟢 LTE Reception Zone</strong><br>Green area indicates Telenor Maritime LTE coverage<br>(≥12km from Norwegian coast)</div>'
     });
     
-    receptionOverlay.setMap(map);
+    // Create multiple polygon overlays
+    receptionAreas.forEach(area => {
+        const receptionOverlay = new google.maps.Polygon({
+            paths: area,
+            strokeColor: '#28a745',
+            strokeOpacity: 0.6,
+            strokeWeight: 2,
+            fillColor: '#28a745',
+            fillOpacity: 0.3
+        });
+        
+        receptionOverlay.setMap(map);
+        
+        receptionOverlay.addListener('click', function(event) {
+            infoWindow.setPosition(event.latLng);
+            infoWindow.open(map);
+        });
+    });
 
     // Draw coastline for reference
     const coastline = new google.maps.Polyline({
@@ -80,57 +92,50 @@ function drawReceptionZone() {
     });
     
     coastline.setMap(map);
-
-    // Add info window for reception zone
-    const infoWindow = new google.maps.InfoWindow({
-        content: '<div style="padding: 5px;"><strong>🟢 LTE Reception Zone</strong><br>Green area indicates Telenor Maritime LTE coverage<br>(≥12km from Norwegian coast)</div>'
-    });
-
-    receptionOverlay.addListener('click', function(event) {
-        infoWindow.setPosition(event.latLng);
-        infoWindow.open(map);
-    });
 }
 
 function createReceptionZonePolygon() {
-    // Create a large polygon that covers the reception area
-    // This includes the offshore boundary and extends to map edges
+    // Create a simple rectangular grid of reception zones seaward from Norway
+    // This approach creates obvious coverage areas that are easy to see
     
-    const offshorePoints = calculateOffshorePoints(norwegianCoastline, 12000);
+    const receptionAreas = [];
     
-    // Create the complete polygon by combining:
-    // 1. The 12km offshore boundary
-    // 2. Outer map boundaries to fill the entire reception area
+    // Define several large rectangular areas covering Norwegian waters
+    // where LTE reception is available (>12km from coast)
     
-    const mapBounds = [
-        { lat: 73.0, lng: 35.0 },  // Northeast corner
-        { lat: 73.0, lng: 0.0 },   // Northwest corner  
-        { lat: 56.0, lng: 0.0 },   // Southwest corner
-        { lat: 56.0, lng: 35.0 },  // Southeast corner
-        { lat: 73.0, lng: 35.0 }   // Close the outer boundary
-    ];
+    // North Sea reception areas
+    receptionAreas.push([
+        { lat: 62.0, lng: 1.0 },
+        { lat: 62.0, lng: 6.0 },
+        { lat: 57.5, lng: 6.0 },
+        { lat: 57.5, lng: 1.0 }
+    ]);
     
-    // The polygon will be the outer boundary minus the "hole" created by the coastline
-    // and 12km buffer zone (areas where there's NO reception)
+    // Norwegian Sea reception areas
+    receptionAreas.push([
+        { lat: 72.0, lng: 8.0 },
+        { lat: 72.0, lng: 20.0 },
+        { lat: 65.0, lng: 20.0 },
+        { lat: 65.0, lng: 8.0 }
+    ]);
     
-    // Create "hole" polygon (area where there's no reception - coast + 12km buffer)
-    const noReceptionHole = [];
+    // Barents Sea reception area
+    receptionAreas.push([
+        { lat: 72.0, lng: 20.0 },
+        { lat: 72.0, lng: 30.0 },
+        { lat: 68.0, lng: 30.0 },
+        { lat: 68.0, lng: 20.0 }
+    ]);
     
-    // Add coastline points
-    for (const point of norwegianCoastline) {
-        noReceptionHole.push(point);
-    }
+    // Western waters reception area
+    receptionAreas.push([
+        { lat: 65.0, lng: 0.0 },
+        { lat: 65.0, lng: 8.0 },
+        { lat: 60.0, lng: 8.0 },
+        { lat: 60.0, lng: 0.0 }
+    ]);
     
-    // Add 12km offshore points (in reverse order to create proper hole)
-    for (let i = offshorePoints.length - 1; i >= 0; i--) {
-        noReceptionHole.push(offshorePoints[i]);
-    }
-    
-    // Close the hole
-    noReceptionHole.push(norwegianCoastline[0]);
-    
-    // Return polygon with outer boundary and inner hole
-    return [mapBounds, noReceptionHole];
+    return receptionAreas;
 }
 
 function calculateOffshorePoints(coastlinePoints, distanceMeters) {
