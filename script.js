@@ -164,46 +164,39 @@ function displayCoastalLines() {
 function calculateLTEZone() {
     if (!coastalData) return;
 
-    // Create ocean-only coverage by defining world bounds with land as holes
-    const worldBounds = [
-        { lat: 85, lng: -180 },
-        { lat: 85, lng: 180 },
-        { lat: -85, lng: 180 },
-        { lat: -85, lng: -180 }
+    // Create multiple ocean rectangles to simulate ocean coverage
+    // This avoids the complexity of polygon holes
+    const oceanRegions = [
+        // North Atlantic
+        [{ lat: 85, lng: -80 }, { lat: 85, lng: 20 }, { lat: 40, lng: 20 }, { lat: 40, lng: -80 }],
+        // South Atlantic  
+        [{ lat: 40, lng: -70 }, { lat: 40, lng: 20 }, { lat: -60, lng: 20 }, { lat: -60, lng: -70 }],
+        // North Pacific
+        [{ lat: 85, lng: -180 }, { lat: 85, lng: -80 }, { lat: 20, lng: -80 }, { lat: 20, lng: -180 }],
+        [{ lat: 85, lng: 120 }, { lat: 85, lng: 180 }, { lat: 20, lng: 180 }, { lat: 20, lng: 120 }],
+        // South Pacific
+        [{ lat: 20, lng: -180 }, { lat: 20, lng: -70 }, { lat: -60, lng: -70 }, { lat: -60, lng: -180 }],
+        [{ lat: 20, lng: 100 }, { lat: 20, lng: 180 }, { lat: -60, lng: 180 }, { lat: -60, lng: 100 }],
+        // Indian Ocean
+        [{ lat: 30, lng: 20 }, { lat: 30, lng: 120 }, { lat: -60, lng: 120 }, { lat: -60, lng: 20 }],
+        // Arctic Ocean
+        [{ lat: 85, lng: -180 }, { lat: 85, lng: 180 }, { lat: 70, lng: 180 }, { lat: 70, lng: -180 }],
+        // Southern Ocean
+        [{ lat: -60, lng: -180 }, { lat: -60, lng: 180 }, { lat: -85, lng: 180 }, { lat: -85, lng: -180 }]
     ];
 
-    // Create holes for land masses
-    const landHoles = [];
-    
-    coastalData.features.forEach(feature => {
-        if (feature.geometry.type === 'Polygon') {
-            const coordinates = feature.geometry.coordinates[0].map(coord => ({
-                lat: coord[1],
-                lng: coord[0]
-            }));
-            landHoles.push(coordinates);
-        } else if (feature.geometry.type === 'MultiPolygon') {
-            feature.geometry.coordinates.forEach(polygonCoords => {
-                const coordinates = polygonCoords[0].map(coord => ({
-                    lat: coord[1],
-                    lng: coord[0]
-                }));
-                landHoles.push(coordinates);
-            });
-        }
+    // Create ocean coverage polygons
+    oceanRegions.forEach(region => {
+        const oceanPolygon = new google.maps.Polygon({
+            paths: region,
+            strokeColor: '#2ecc71',
+            strokeOpacity: 0.4,
+            strokeWeight: 0,
+            fillColor: '#2ecc71',
+            fillOpacity: 0.2
+        });
+        oceanPolygon.setMap(map);
     });
-
-    // Create the ocean polygon with land areas as holes
-    lteZonePolygon = new google.maps.Polygon({
-        paths: [worldBounds, ...landHoles],
-        strokeColor: '#2ecc71',
-        strokeOpacity: 0.6,
-        strokeWeight: 1,
-        fillColor: '#2ecc71',
-        fillOpacity: 0.25
-    });
-
-    lteZonePolygon.setMap(map);
 }
 
 // Update user position on map and info panel
