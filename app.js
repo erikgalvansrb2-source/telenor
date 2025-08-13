@@ -3,6 +3,7 @@ let userMarker;
 let receptionZoneLine;
 let currentPosition = null;
 let googleMapsLoaded = false;
+let coverageCircle = null;
 
 // Google Maps API Key for static deployment
 const GOOGLE_MAPS_API_KEY = 'AIzaSyCVCP7JXnHdf3LUt-WE9uMVpzRuW6dlUYo';
@@ -55,87 +56,12 @@ function initMap() {
 }
 
 function drawReceptionZone() {
-    console.log('Drawing Telenor Maritime LTE reception zones...');
+    console.log('Setting up global maritime LTE coverage visualization...');
     
-    // Define LTE coverage areas around Norway (offshore only, ≥12km from coast)
-    const lteZones = [
-        // North Sea (Far offshore from southwest Norway)
-        {
-            name: "North Sea LTE Zone",
-            coords: [
-                { lat: 60.5, lng: 1.5 },   // Well offshore from Stavanger
-                { lat: 60.5, lng: 3.5 },
-                { lat: 58.0, lng: 3.5 },
-                { lat: 58.0, lng: 1.5 }
-            ]
-        },
-        // Norwegian Sea (Far offshore from west coast)
-        {
-            name: "Norwegian Sea LTE Zone", 
-            coords: [
-                { lat: 69.0, lng: 5.0 },   // Well offshore from Trondheim area
-                { lat: 69.0, lng: 8.0 },
-                { lat: 62.0, lng: 8.0 },
-                { lat: 62.0, lng: 5.0 }
-            ]
-        },
-        // Norwegian Sea North (Far offshore from northern coast)
-        {
-            name: "Norwegian Sea North LTE Zone",
-            coords: [
-                { lat: 71.0, lng: 12.0 },  // Well offshore from northern Norway
-                { lat: 71.0, lng: 16.0 },
-                { lat: 69.0, lng: 16.0 },
-                { lat: 69.0, lng: 12.0 }
-            ]
-        },
-        // Barents Sea (Far offshore from northeast Norway)
-        {
-            name: "Barents Sea LTE Zone",
-            coords: [
-                { lat: 71.5, lng: 25.0 },  // Well offshore from Finnmark
-                { lat: 71.5, lng: 30.0 },
-                { lat: 69.0, lng: 30.0 },
-                { lat: 69.0, lng: 25.0 }
-            ]
-        }
-    ];
+    // Instead of fixed polygons, we'll use a dynamic circle around the user
+    // and show coverage based on real-time calculations
     
-    // Create info window
-    const infoWindow = new google.maps.InfoWindow();
-    
-    // Create each LTE zone as a green polygon
-    lteZones.forEach((zone, index) => {
-        console.log(`Creating ${zone.name}...`);
-        
-        const ltePolygon = new google.maps.Polygon({
-            paths: zone.coords,
-            strokeColor: '#28a745',   // Green border
-            strokeOpacity: 0.8,
-            strokeWeight: 2,
-            fillColor: '#28a745',     // Green fill
-            fillOpacity: 0.3          // Semi-transparent
-        });
-        
-        ltePolygon.setMap(map);
-        
-        // Add click listener for info
-        ltePolygon.addListener('click', function(event) {
-            infoWindow.setContent(`
-                <div style="padding: 5px;">
-                    <strong>🟢 ${zone.name}</strong><br>
-                    Telenor Maritime LTE Coverage Area<br>
-                    <small>Coverage available ≥12km from Norwegian coast</small>
-                </div>
-            `);
-            infoWindow.setPosition(event.latLng);
-            infoWindow.open(map);
-        });
-        
-        console.log(`${zone.name} added to map`);
-    });
-
-    // Draw coastline for reference
+    // Draw Norwegian coastline for reference (since this started as a Norway-focused service)
     const coastline = new google.maps.Polyline({
         path: norwegianCoastline,
         geodesic: true,
@@ -145,7 +71,10 @@ function drawReceptionZone() {
     });
     
     coastline.setMap(map);
-    console.log('All LTE zones and coastline rendered');
+    
+    // Note: The actual coverage determination is now handled dynamically 
+    // in checkReceptionStatus() which calculates distance to nearest coastline
+    console.log('Dynamic global maritime LTE coverage system ready');
 }
 
 function createReceptionZonePolygon() {
@@ -275,8 +204,11 @@ function updateUserMarker(position) {
 }
 
 // Client-side distance calculation using Haversine formula
+// For a global maritime service, this would ideally use a comprehensive global coastline dataset
+// For now, we'll use a simplified approach with major coastal points worldwide
 function calculateDistanceToCoast(userPos) {
-    const coastalPoints = [
+    const globalCoastalPoints = [
+        // Norway (original focus area)
         { latitude: 71.1856, longitude: 25.7843 }, // Northern Norway
         { latitude: 70.6632, longitude: 23.6815 },
         { latitude: 69.9496, longitude: 23.2717 },
@@ -287,20 +219,41 @@ function calculateDistanceToCoast(userPos) {
         { latitude: 66.3142, longitude: 12.4442 },
         { latitude: 65.8470, longitude: 11.2280 },
         { latitude: 64.4734, longitude: 11.3849 },
-        { latitude: 63.4305, longitude: 10.3951 }, // Trondheim
+        { latitude: 63.4305, longitude: 10.3951 },
         { latitude: 62.4722, longitude: 6.1495 },
         { latitude: 61.1217, longitude: 5.0218 },
-        { latitude: 60.3913, longitude: 5.3221 }, // Bergen
-        { latitude: 59.9139, longitude: 10.7522 }, // Oslo
+        { latitude: 60.3913, longitude: 5.3221 },
+        { latitude: 59.9139, longitude: 10.7522 },
         { latitude: 58.9700, longitude: 9.2300 },
-        { latitude: 58.1467, longitude: 8.0014 }, // Kristiansand
-        { latitude: 58.9667, longitude: 5.7333 }, // Stavanger
-        { latitude: 59.2181, longitude: 5.0408 }
+        { latitude: 58.1467, longitude: 8.0014 },
+        { latitude: 58.9667, longitude: 5.7333 },
+        { latitude: 59.2181, longitude: 5.0408 },
+        
+        // Major European coastlines
+        { latitude: 60.0, longitude: -1.0 },   // Scotland
+        { latitude: 55.0, longitude: -4.0 },   // Ireland
+        { latitude: 51.5, longitude: 1.0 },    // England
+        { latitude: 49.0, longitude: 2.0 },    // France
+        { latitude: 43.0, longitude: -2.0 },   // Spain
+        { latitude: 41.0, longitude: 9.0 },    // Italy
+        { latitude: 37.0, longitude: 23.0 },   // Greece
+        
+        // Major global coastlines (simplified)
+        { latitude: 40.0, longitude: -74.0 },  // US East Coast
+        { latitude: 34.0, longitude: -118.0 }, // US West Coast
+        { latitude: -33.9, longitude: 18.4 },  // South Africa
+        { latitude: -33.8, longitude: 151.2 }, // Australia
+        { latitude: 35.7, longitude: 139.7 },  // Japan
+        { latitude: 1.3, longitude: 103.8 },   // Singapore
+        { latitude: 55.7, longitude: 37.6 },   // Russia
+        
+        // Note: In a production system, this would use a comprehensive
+        // global coastline database with thousands of points
     ];
 
     let minDistance = Infinity;
     
-    for (const point of coastalPoints) {
+    for (const point of globalCoastalPoints) {
         const distance = haversineDistance(
             userPos.lat, userPos.lng,
             point.latitude, point.longitude
@@ -336,15 +289,45 @@ function checkReceptionStatus(position) {
         const statusElement = document.getElementById('status-text');
         const distanceElement = document.getElementById('distance-info');
         
+        // Remove existing coverage circle
+        if (coverageCircle) {
+            coverageCircle.setMap(null);
+        }
+        
         if (inReceptionZone) {
             statusElement.innerHTML = 
                 '<span class="status-indicator status-connected"></span>LTE Reception Available';
             distanceElement.textContent = `${distanceToCoastKm}km from coast`;
+            
+            // Show green coverage area around user
+            coverageCircle = new google.maps.Circle({
+                center: position,
+                radius: 5000, // 5km radius around user position
+                strokeColor: '#28a745',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: '#28a745',
+                fillOpacity: 0.2
+            });
+            coverageCircle.setMap(map);
+            
         } else {
             statusElement.innerHTML = 
                 '<span class="status-indicator status-disconnected"></span>Outside Reception Zone';
             const needMore = Math.round((12000 - distanceToCoast) / 1000 * 100) / 100;
             distanceElement.textContent = `${distanceToCoastKm}km from coast (need ${needMore}km more)`;
+            
+            // Show red "no coverage" area around user
+            coverageCircle = new google.maps.Circle({
+                center: position,
+                radius: 3000, // 3km radius around user position
+                strokeColor: '#dc3545',
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: '#dc3545',
+                fillOpacity: 0.1
+            });
+            coverageCircle.setMap(map);
         }
         
     } catch (error) {
