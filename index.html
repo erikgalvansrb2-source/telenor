@@ -148,7 +148,12 @@
     <div class="container">
         <div class="sidebar">
             <div class="deployment-notice">
-                <strong>Static Version:</strong> This version runs client-side only for GitHub Pages deployment. For production use, consider the server-based version.
+                <strong>GitHub Pages Deployment:</strong> This static version works on GitHub Pages. 
+                <br><br>
+                <strong>API Key Setup Required:</strong> If maps don't load, the Google Maps API key needs to be configured to allow access from:
+                <br><code>https://erikgalvansrb2-source.github.io/*</code>
+                <br><br>
+                Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a> → API Key → Application restrictions → HTTP referrers → Add the domain above.
             </div>
             
             <div class="status-card">

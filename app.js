@@ -31,12 +31,12 @@ const norwegianCoastline = [
 
 function loadGoogleMaps() {
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap&loading=async`;
     script.async = true;
     script.defer = true;
     script.onerror = () => {
         document.getElementById('map').innerHTML = 
-            '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">Failed to load Google Maps</div>';
+            '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; padding: 20px; text-align: center;"><div><strong>Failed to load Google Maps</strong><br><br>This might be due to API key restrictions. Please ensure the API key is configured for this domain:<br><code>https://erikgalvansrb2-source.github.io</code></div></div>';
     };
     document.head.appendChild(script);
 }
