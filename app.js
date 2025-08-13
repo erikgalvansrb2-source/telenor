@@ -31,86 +31,134 @@ const norwegianCoastline = [
 ];
 
 function loadGoogleMaps() {
+    console.log('🔧 DEBUG: loadGoogleMaps() called');
+    console.log('🔧 DEBUG: API Key:', GOOGLE_MAPS_API_KEY ? 'Present' : 'Missing');
+    
     const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap&loading=async`;
     script.async = true;
     script.defer = true;
+    script.onload = () => {
+        console.log('✅ DEBUG: Google Maps script loaded successfully');
+    };
     script.onerror = () => {
+        console.error('❌ DEBUG: Google Maps script failed to load');
         document.getElementById('map').innerHTML = 
             '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; padding: 20px; text-align: center;"><div><strong>Failed to load Google Maps</strong><br><br>This might be due to API key restrictions. Please ensure the API key is configured for this domain:<br><code>https://erikgalvansrb2-source.github.io</code></div></div>';
     };
     document.head.appendChild(script);
+    console.log('🔧 DEBUG: Google Maps script tag added to document');
 }
 
 function initMap() {
-    map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 6,
-        center: { lat: 65.0, lng: 10.0 },
-        mapTypeId: 'terrain'
-    });
-
-    drawReceptionZone();
-    getCurrentLocation();
+    console.log('🔧 DEBUG: initMap() called');
+    console.log('🔧 DEBUG: google.maps available:', typeof google !== 'undefined' && typeof google.maps !== 'undefined');
     
-    document.getElementById('refresh-location').addEventListener('click', getCurrentLocation);
+    try {
+        const mapElement = document.getElementById('map');
+        console.log('🔧 DEBUG: Map element found:', mapElement ? 'Yes' : 'No');
+        
+        map = new google.maps.Map(mapElement, {
+            zoom: 6,
+            center: { lat: 65.0, lng: 10.0 },
+            mapTypeId: 'terrain'
+        });
+        console.log('✅ DEBUG: Google Map created successfully');
+
+        console.log('🔧 DEBUG: Calling drawReceptionZone()...');
+        drawReceptionZone();
+        
+        console.log('🔧 DEBUG: Calling getCurrentLocation()...');
+        getCurrentLocation();
+        
+        const refreshButton = document.getElementById('refresh-location');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', getCurrentLocation);
+            console.log('✅ DEBUG: Refresh button event listener added');
+        } else {
+            console.error('❌ DEBUG: Refresh button not found');
+        }
+        
+        console.log('✅ DEBUG: initMap() completed successfully');
+        
+    } catch (error) {
+        console.error('❌ DEBUG: Error in initMap():', error);
+    }
 }
 
 function drawReceptionZone() {
-    console.log('Drawing global maritime LTE reception zone...');
+    console.log('🔧 DEBUG: drawReceptionZone() called');
+    console.log('🔧 DEBUG: map object exists:', map ? 'Yes' : 'No');
+    console.log('🔧 DEBUG: google.maps.Polygon available:', typeof google.maps.Polygon !== 'undefined');
     
-    // Create one global reception zone covering all oceans (≥12km from any coast)
-    // This represents the simplified concept that LTE is available in international waters globally
-    
-    const globalReceptionZone = [
-        // Outer boundary covering the entire world's oceans
-        { lat: 85, lng: -180 },   // North-West corner
-        { lat: 85, lng: 180 },    // North-East corner  
-        { lat: -85, lng: 180 },   // South-East corner
-        { lat: -85, lng: -180 },  // South-West corner
-        { lat: 85, lng: -180 }    // Close the polygon
-    ];
-    
-    // Create info window
-    const infoWindow = new google.maps.InfoWindow();
-    
-    console.log('Creating global maritime LTE coverage zone...');
-    
-    const globalPolygon = new google.maps.Polygon({
-        paths: globalReceptionZone,
-        strokeColor: '#28a745',
-        strokeOpacity: 0.4,
-        strokeWeight: 1,
-        fillColor: '#28a745',
-        fillOpacity: 0.1  // Very light so it doesn't overwhelm the map
-    });
-    
-    globalPolygon.setMap(map);
-    
-    // Add click info
-    globalPolygon.addListener('click', function(event) {
-        infoWindow.setContent(`
-            <div style="padding: 5px;">
-                <strong>🌍 Global Maritime LTE Coverage</strong><br>
-                Telenor Maritime LTE available worldwide<br>
-                <small>Coverage in international waters ≥12km from any coastline</small>
-            </div>
-        `);
-        infoWindow.setPosition(event.latLng);
-        infoWindow.open(map);
-    });
-    
-    // Draw Norwegian coastline for reference (original service area)
-    const coastline = new google.maps.Polyline({
-        path: norwegianCoastline,
-        geodesic: true,
-        strokeColor: '#8B4513',
-        strokeOpacity: 0.8,
-        strokeWeight: 2
-    });
-    
-    coastline.setMap(map);
-    
-    console.log('Global maritime LTE reception zone rendered');
+    try {
+        // Create one global reception zone covering all oceans (≥12km from any coast)
+        const globalReceptionZone = [
+            { lat: 85, lng: -180 },   // North-West corner
+            { lat: 85, lng: 180 },    // North-East corner  
+            { lat: -85, lng: 180 },   // South-East corner
+            { lat: -85, lng: -180 },  // South-West corner
+            { lat: 85, lng: -180 }    // Close the polygon
+        ];
+        
+        console.log('🔧 DEBUG: Global reception zone coordinates:', globalReceptionZone);
+        
+        // Create info window
+        const infoWindow = new google.maps.InfoWindow();
+        console.log('✅ DEBUG: InfoWindow created');
+        
+        console.log('🔧 DEBUG: Creating global polygon...');
+        const globalPolygon = new google.maps.Polygon({
+            paths: globalReceptionZone,
+            strokeColor: '#28a745',
+            strokeOpacity: 0.8,  // Make more visible for debugging
+            strokeWeight: 3,     // Make thicker for debugging
+            fillColor: '#28a745',
+            fillOpacity: 0.3     // Make more visible for debugging
+        });
+        console.log('✅ DEBUG: Global polygon object created');
+        
+        console.log('🔧 DEBUG: Adding polygon to map...');
+        globalPolygon.setMap(map);
+        console.log('✅ DEBUG: Global polygon added to map');
+        
+        // Add click info
+        globalPolygon.addListener('click', function(event) {
+            console.log('🔧 DEBUG: Global polygon clicked at:', event.latLng.toString());
+            infoWindow.setContent(`
+                <div style="padding: 5px;">
+                    <strong>🌍 Global Maritime LTE Coverage</strong><br>
+                    Telenor Maritime LTE available worldwide<br>
+                    <small>Coverage in international waters ≥12km from any coastline</small>
+                </div>
+            `);
+            infoWindow.setPosition(event.latLng);
+            infoWindow.open(map);
+        });
+        console.log('✅ DEBUG: Global polygon click listener added');
+        
+        // Draw Norwegian coastline for reference
+        console.log('🔧 DEBUG: Creating Norwegian coastline...');
+        console.log('🔧 DEBUG: norwegianCoastline data:', norwegianCoastline.length, 'points');
+        
+        const coastline = new google.maps.Polyline({
+            path: norwegianCoastline,
+            geodesic: true,
+            strokeColor: '#8B4513',
+            strokeOpacity: 0.8,
+            strokeWeight: 2
+        });
+        console.log('✅ DEBUG: Norwegian coastline polyline created');
+        
+        coastline.setMap(map);
+        console.log('✅ DEBUG: Norwegian coastline added to map');
+        
+        console.log('✅ DEBUG: drawReceptionZone() completed successfully');
+        
+    } catch (error) {
+        console.error('❌ DEBUG: Error in drawReceptionZone():', error);
+        console.error('❌ DEBUG: Error stack:', error.stack);
+    }
 }
 
 function createReceptionZonePolygon() {
@@ -183,25 +231,39 @@ function calculateDestination(point, bearing, distance) {
 }
 
 function getCurrentLocation() {
+    console.log('🔧 DEBUG: getCurrentLocation() called');
+    console.log('🔧 DEBUG: navigator.geolocation available:', !!navigator.geolocation);
+    
     if (navigator.geolocation) {
+        console.log('🔧 DEBUG: Requesting geolocation...');
         navigator.geolocation.getCurrentPosition(
             function(position) {
+                console.log('✅ DEBUG: Geolocation success:', position.coords);
                 currentPosition = {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 };
+                console.log('🔧 DEBUG: currentPosition set to:', currentPosition);
                 
+                console.log('🔧 DEBUG: Calling updateLocationDisplay()...');
                 updateLocationDisplay(currentPosition);
+                
+                console.log('🔧 DEBUG: Calling updateUserMarker()...');
                 updateUserMarker(currentPosition);
+                
+                console.log('🔧 DEBUG: Calling checkReceptionStatus()...');
                 checkReceptionStatus(currentPosition);
             },
             function(error) {
+                console.error('❌ DEBUG: Geolocation error:', error);
+                console.error('❌ DEBUG: Error code:', error.code, 'Message:', error.message);
                 document.getElementById('location-text').textContent = 'Location access denied';
                 document.getElementById('status-text').innerHTML = 
                     '<span class="status-indicator status-unknown"></span>Unable to get location';
             }
         );
     } else {
+        console.error('❌ DEBUG: Geolocation not supported');
         document.getElementById('location-text').textContent = 'Geolocation not supported';
         document.getElementById('status-text').innerHTML = 
             '<span class="status-indicator status-unknown"></span>Geolocation not available';
@@ -374,4 +436,9 @@ function checkReceptionStatus(position) {
 }
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', loadGoogleMaps);
+console.log('🔧 DEBUG: Script loaded, adding DOMContentLoaded listener');
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ DEBUG: DOMContentLoaded event fired');
+    console.log('🔧 DEBUG: Document ready, calling loadGoogleMaps()...');
+    loadGoogleMaps();
+});
