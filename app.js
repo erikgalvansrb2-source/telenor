@@ -57,46 +57,46 @@ function initMap() {
 function drawReceptionZone() {
     console.log('Drawing Telenor Maritime LTE reception zones...');
     
-    // Define LTE coverage areas around Norway (≥12km from coast)
+    // Define LTE coverage areas around Norway (offshore only, ≥12km from coast)
     const lteZones = [
-        // North Sea (Southwest of Norway)
+        // North Sea (Far offshore from southwest Norway)
         {
             name: "North Sea LTE Zone",
             coords: [
-                { lat: 61.5, lng: 1.0 },
-                { lat: 61.5, lng: 6.0 },
-                { lat: 57.5, lng: 6.0 },
-                { lat: 57.5, lng: 1.0 }
+                { lat: 60.5, lng: 1.5 },   // Well offshore from Stavanger
+                { lat: 60.5, lng: 3.5 },
+                { lat: 58.0, lng: 3.5 },
+                { lat: 58.0, lng: 1.5 }
             ]
         },
-        // Norwegian Sea (West/Northwest of Norway)
+        // Norwegian Sea (Far offshore from west coast)
         {
             name: "Norwegian Sea LTE Zone", 
             coords: [
-                { lat: 71.0, lng: 8.0 },
-                { lat: 71.0, lng: 18.0 },
-                { lat: 64.0, lng: 18.0 },
-                { lat: 64.0, lng: 8.0 }
+                { lat: 69.0, lng: 5.0 },   // Well offshore from Trondheim area
+                { lat: 69.0, lng: 8.0 },
+                { lat: 62.0, lng: 8.0 },
+                { lat: 62.0, lng: 5.0 }
             ]
         },
-        // Barents Sea (Northeast of Norway)
+        // Norwegian Sea North (Far offshore from northern coast)
+        {
+            name: "Norwegian Sea North LTE Zone",
+            coords: [
+                { lat: 71.0, lng: 12.0 },  // Well offshore from northern Norway
+                { lat: 71.0, lng: 16.0 },
+                { lat: 69.0, lng: 16.0 },
+                { lat: 69.0, lng: 12.0 }
+            ]
+        },
+        // Barents Sea (Far offshore from northeast Norway)
         {
             name: "Barents Sea LTE Zone",
             coords: [
-                { lat: 71.5, lng: 20.0 },
+                { lat: 71.5, lng: 25.0 },  // Well offshore from Finnmark
                 { lat: 71.5, lng: 30.0 },
-                { lat: 68.0, lng: 30.0 },
-                { lat: 68.0, lng: 20.0 }
-            ]
-        },
-        // Western waters (Central west coast)
-        {
-            name: "Western Waters LTE Zone",
-            coords: [
-                { lat: 64.0, lng: 0.0 },
-                { lat: 64.0, lng: 8.0 },
-                { lat: 61.5, lng: 8.0 },
-                { lat: 61.5, lng: 0.0 }
+                { lat: 69.0, lng: 30.0 },
+                { lat: 69.0, lng: 25.0 }
             ]
         }
     ];
