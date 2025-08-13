@@ -18,7 +18,16 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use(express.static('public'));
+// Serve static files from root directory
+app.use(express.static('.', {
+  index: 'index.html',
+  dotfiles: 'deny',
+  setHeaders: function(res, path) {
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
