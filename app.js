@@ -55,28 +55,85 @@ function initMap() {
 }
 
 function drawReceptionZone() {
-    console.log('drawReceptionZone called');
+    console.log('Drawing Telenor Maritime LTE reception zones...');
     
-    // Simple test - create one obvious polygon first
-    console.log('Creating test polygon...');
+    // Define LTE coverage areas around Norway (≥12km from coast)
+    const lteZones = [
+        // North Sea (Southwest of Norway)
+        {
+            name: "North Sea LTE Zone",
+            coords: [
+                { lat: 61.5, lng: 1.0 },
+                { lat: 61.5, lng: 6.0 },
+                { lat: 57.5, lng: 6.0 },
+                { lat: 57.5, lng: 1.0 }
+            ]
+        },
+        // Norwegian Sea (West/Northwest of Norway)
+        {
+            name: "Norwegian Sea LTE Zone", 
+            coords: [
+                { lat: 71.0, lng: 8.0 },
+                { lat: 71.0, lng: 18.0 },
+                { lat: 64.0, lng: 18.0 },
+                { lat: 64.0, lng: 8.0 }
+            ]
+        },
+        // Barents Sea (Northeast of Norway)
+        {
+            name: "Barents Sea LTE Zone",
+            coords: [
+                { lat: 71.5, lng: 20.0 },
+                { lat: 71.5, lng: 30.0 },
+                { lat: 68.0, lng: 30.0 },
+                { lat: 68.0, lng: 20.0 }
+            ]
+        },
+        // Western waters (Central west coast)
+        {
+            name: "Western Waters LTE Zone",
+            coords: [
+                { lat: 64.0, lng: 0.0 },
+                { lat: 64.0, lng: 8.0 },
+                { lat: 61.5, lng: 8.0 },
+                { lat: 61.5, lng: 0.0 }
+            ]
+        }
+    ];
     
-    const testPolygon = new google.maps.Polygon({
-        paths: [
-            { lat: 60.0, lng: 2.0 },
-            { lat: 60.0, lng: 5.0 },
-            { lat: 58.0, lng: 5.0 },
-            { lat: 58.0, lng: 2.0 }
-        ],
-        strokeColor: '#FF0000',  // Red for high visibility
-        strokeOpacity: 1.0,
-        strokeWeight: 4,
-        fillColor: '#FF0000',
-        fillOpacity: 0.5
+    // Create info window
+    const infoWindow = new google.maps.InfoWindow();
+    
+    // Create each LTE zone as a green polygon
+    lteZones.forEach((zone, index) => {
+        console.log(`Creating ${zone.name}...`);
+        
+        const ltePolygon = new google.maps.Polygon({
+            paths: zone.coords,
+            strokeColor: '#28a745',   // Green border
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#28a745',     // Green fill
+            fillOpacity: 0.3          // Semi-transparent
+        });
+        
+        ltePolygon.setMap(map);
+        
+        // Add click listener for info
+        ltePolygon.addListener('click', function(event) {
+            infoWindow.setContent(`
+                <div style="padding: 5px;">
+                    <strong>🟢 ${zone.name}</strong><br>
+                    Telenor Maritime LTE Coverage Area<br>
+                    <small>Coverage available ≥12km from Norwegian coast</small>
+                </div>
+            `);
+            infoWindow.setPosition(event.latLng);
+            infoWindow.open(map);
+        });
+        
+        console.log(`${zone.name} added to map`);
     });
-    
-    console.log('Adding test polygon to map...');
-    testPolygon.setMap(map);
-    console.log('Test polygon added');
 
     // Draw coastline for reference
     const coastline = new google.maps.Polyline({
@@ -88,7 +145,7 @@ function drawReceptionZone() {
     });
     
     coastline.setMap(map);
-    console.log('Coastline added');
+    console.log('All LTE zones and coastline rendered');
 }
 
 function createReceptionZonePolygon() {
