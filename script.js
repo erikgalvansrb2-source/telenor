@@ -167,65 +167,65 @@ function createBufferZone() {
 
     coastalData.features.forEach(feature => {
         if (feature.geometry.type === 'Polygon') {
-            const bufferedCoordinates = bufferPolygon(feature.geometry.coordinates[0], 12);
-            if (bufferedCoordinates && bufferedCoordinates.length > 0) {
-                const bufferPolygon = new google.maps.Polygon({
-                    paths: bufferedCoordinates,
-                    strokeColor: '#ff6b6b',
-                    strokeOpacity: 0.6,
-                    strokeWeight: 2,
-                    fillColor: '#ff6b6b',
-                    fillOpacity: 0.2
-                });
-                bufferPolygon.setMap(map);
-                bufferZonePolygons.push(bufferPolygon);
-            }
+            createBufferLines(feature.geometry.coordinates[0]);
         } else if (feature.geometry.type === 'MultiPolygon') {
             feature.geometry.coordinates.forEach(polygonCoords => {
-                const bufferedCoordinates = bufferPolygon(polygonCoords[0], 12);
-                if (bufferedCoordinates && bufferedCoordinates.length > 0) {
-                    const bufferPolygon = new google.maps.Polygon({
-                        paths: bufferedCoordinates,
-                        strokeColor: '#ff6b6b',
-                        strokeOpacity: 0.6,
-                        strokeWeight: 2,
-                        fillColor: '#ff6b6b',
-                        fillOpacity: 0.2
-                    });
-                    bufferPolygon.setMap(map);
-                    bufferZonePolygons.push(bufferPolygon);
-                }
+                createBufferLines(polygonCoords[0]);
             });
         }
     });
 }
 
-// Create a buffer around a polygon (simplified approach)
-function bufferPolygon(coordinates, bufferKm) {
-    if (!coordinates || coordinates.length < 3) return null;
+// Create buffer lines extending from coastline segments
+function createBufferLines(coordinates) {
+    if (!coordinates || coordinates.length < 2) return;
 
-    const bufferedPoints = [];
+    const bufferKm = 12;
     const bufferDegrees = bufferKm / 111; // Rough conversion: 1 degree ≈ 111 km
 
-    coordinates.forEach(coord => {
-        const lng = coord[0];
-        const lat = coord[1];
+    for (let i = 0; i < coordinates.length - 1; i++) {
+        const current = coordinates[i];
+        const next = coordinates[i + 1];
         
-        // Create a small circle around each point to simulate buffer
-        for (let angle = 0; angle < 360; angle += 30) {
-            const radians = (angle * Math.PI) / 180;
-            const bufferedLat = lat + bufferDegrees * Math.cos(radians);
-            const bufferedLng = lng + bufferDegrees * Math.sin(radians) / Math.cos(lat * Math.PI / 180);
+        const lng1 = current[0];
+        const lat1 = current[1];
+        const lng2 = next[0];
+        const lat2 = next[1];
+        
+        // Calculate the perpendicular direction (normal) to the coastline segment
+        const dx = lng2 - lng1;
+        const dy = lat2 - lat1;
+        const length = Math.sqrt(dx * dx + dy * dy);
+        
+        if (length > 0) {
+            // Normalize and rotate 90 degrees to get perpendicular vector
+            const normalX = -dy / length;
+            const normalY = dx / length;
             
-            bufferedPoints.push({
-                lat: bufferedLat,
-                lng: bufferedLng
+            // Create buffer rectangle extending from this coastline segment
+            const bufferPath = [
+                { lat: lat1, lng: lng1 }, // coastline start
+                { lat: lat2, lng: lng2 }, // coastline end
+                { lat: lat2 + normalY * bufferDegrees, lng: lng2 + normalX * bufferDegrees }, // buffered end
+                { lat: lat1 + normalY * bufferDegrees, lng: lng1 + normalX * bufferDegrees }  // buffered start
+            ];
+            
+            // Create polygon for this buffer segment
+            const bufferPolygon = new google.maps.Polygon({
+                paths: bufferPath,
+                strokeColor: '#ff6b6b',
+                strokeOpacity: 0.4,
+                strokeWeight: 1,
+                fillColor: '#ff6b6b',
+                fillOpacity: 0.2
             });
+            
+            bufferPolygon.setMap(map);
+            bufferZonePolygons.push(bufferPolygon);
         }
-    });
-
-    return bufferedPoints;
+    }
 }
+
 
 // Calculate and display LTE reception zone
 // LTE covers entire ocean but is only active 12km+ from coastline
