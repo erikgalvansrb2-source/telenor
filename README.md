@@ -10,28 +10,12 @@ A web application that displays Telenor Maritime LTE reception zones for cruise 
 - **Visual Indicators**: Clear status display for reception availability
 - **Distance Calculation**: Shows exact distance from coast and coverage zone
 
-## Setup
-
-1. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
 
 2. **Configure Google Maps API**:
    - Get a Google Maps API key from [Google Cloud Console](https://console.cloud.google.com/)
    - Copy `.env.example` to `.env` and add your API key
    - Update `YOUR_GOOGLE_MAPS_API_KEY` in `public/index.html` with your key
 
-3. **Run the Application**:
-   ```bash
-   npm start
-   ```
-
-4. **Access the App**:
-   - Open `http://localhost:3000` in your browser
-   - Allow location access when prompted
-
-## API Endpoints
 
 ### POST `/api/check-reception`
 Checks if a GPS coordinate is within the LTE reception zone.
