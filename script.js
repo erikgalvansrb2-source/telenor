@@ -4,6 +4,7 @@ let coastalData = null;
 let userMarker = null;
 let lteZonePolygon = null;
 let coastalPolygons = [];
+let bufferZonePolygons = [];
 
 // Initialize the map
 function initMap() {
@@ -103,6 +104,7 @@ async function loadCoastalData() {
         
         coastalData = await response.json();
         displayCoastalLines();
+        createBufferZone();
         calculateLTEZone();
         
         if (userPosition) {
@@ -157,6 +159,72 @@ function displayCoastalLines() {
             });
         }
     });
+}
+
+// Create 12km buffer zone extending into the sea from coastline
+function createBufferZone() {
+    if (!coastalData || !coastalData.features) return;
+
+    coastalData.features.forEach(feature => {
+        if (feature.geometry.type === 'Polygon') {
+            const bufferedCoordinates = bufferPolygon(feature.geometry.coordinates[0], 12);
+            if (bufferedCoordinates && bufferedCoordinates.length > 0) {
+                const bufferPolygon = new google.maps.Polygon({
+                    paths: bufferedCoordinates,
+                    strokeColor: '#ff6b6b',
+                    strokeOpacity: 0.6,
+                    strokeWeight: 2,
+                    fillColor: '#ff6b6b',
+                    fillOpacity: 0.2
+                });
+                bufferPolygon.setMap(map);
+                bufferZonePolygons.push(bufferPolygon);
+            }
+        } else if (feature.geometry.type === 'MultiPolygon') {
+            feature.geometry.coordinates.forEach(polygonCoords => {
+                const bufferedCoordinates = bufferPolygon(polygonCoords[0], 12);
+                if (bufferedCoordinates && bufferedCoordinates.length > 0) {
+                    const bufferPolygon = new google.maps.Polygon({
+                        paths: bufferedCoordinates,
+                        strokeColor: '#ff6b6b',
+                        strokeOpacity: 0.6,
+                        strokeWeight: 2,
+                        fillColor: '#ff6b6b',
+                        fillOpacity: 0.2
+                    });
+                    bufferPolygon.setMap(map);
+                    bufferZonePolygons.push(bufferPolygon);
+                }
+            });
+        }
+    });
+}
+
+// Create a buffer around a polygon (simplified approach)
+function bufferPolygon(coordinates, bufferKm) {
+    if (!coordinates || coordinates.length < 3) return null;
+
+    const bufferedPoints = [];
+    const bufferDegrees = bufferKm / 111; // Rough conversion: 1 degree ≈ 111 km
+
+    coordinates.forEach(coord => {
+        const lng = coord[0];
+        const lat = coord[1];
+        
+        // Create a small circle around each point to simulate buffer
+        for (let angle = 0; angle < 360; angle += 30) {
+            const radians = (angle * Math.PI) / 180;
+            const bufferedLat = lat + bufferDegrees * Math.cos(radians);
+            const bufferedLng = lng + bufferDegrees * Math.sin(radians) / Math.cos(lat * Math.PI / 180);
+            
+            bufferedPoints.push({
+                lat: bufferedLat,
+                lng: bufferedLng
+            });
+        }
+    });
+
+    return bufferedPoints;
 }
 
 // Calculate and display LTE reception zone

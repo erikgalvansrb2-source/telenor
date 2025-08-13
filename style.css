@@ -97,8 +97,13 @@ body {
     background-color: #8B4513;
 }
 
+.legend-color.buffer-zone {
+    background-color: rgba(255, 107, 107, 0.2);
+    border: 2px solid #ff6b6b;
+}
+
 .legend-color.lte-zone {
-    background-color: rgba(46, 204, 113, 0.3);
+    background-color: rgba(46, 204, 113, 0.2);
     border: 2px solid #2ecc71;
 }
 
