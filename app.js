@@ -55,32 +55,28 @@ function initMap() {
 }
 
 function drawReceptionZone() {
-    // Create reception zone polygons (areas ≥12km from coast)
-    const receptionAreas = createReceptionZonePolygon();
+    console.log('drawReceptionZone called');
     
-    // Create the polygon overlays with green semi-transparent fill
-    const infoWindow = new google.maps.InfoWindow({
-        content: '<div style="padding: 5px;"><strong>🟢 LTE Reception Zone</strong><br>Green area indicates Telenor Maritime LTE coverage<br>(≥12km from Norwegian coast)</div>'
+    // Simple test - create one obvious polygon first
+    console.log('Creating test polygon...');
+    
+    const testPolygon = new google.maps.Polygon({
+        paths: [
+            { lat: 60.0, lng: 2.0 },
+            { lat: 60.0, lng: 5.0 },
+            { lat: 58.0, lng: 5.0 },
+            { lat: 58.0, lng: 2.0 }
+        ],
+        strokeColor: '#FF0000',  // Red for high visibility
+        strokeOpacity: 1.0,
+        strokeWeight: 4,
+        fillColor: '#FF0000',
+        fillOpacity: 0.5
     });
     
-    // Create multiple polygon overlays
-    receptionAreas.forEach(area => {
-        const receptionOverlay = new google.maps.Polygon({
-            paths: area,
-            strokeColor: '#28a745',
-            strokeOpacity: 0.6,
-            strokeWeight: 2,
-            fillColor: '#28a745',
-            fillOpacity: 0.3
-        });
-        
-        receptionOverlay.setMap(map);
-        
-        receptionOverlay.addListener('click', function(event) {
-            infoWindow.setPosition(event.latLng);
-            infoWindow.open(map);
-        });
-    });
+    console.log('Adding test polygon to map...');
+    testPolygon.setMap(map);
+    console.log('Test polygon added');
 
     // Draw coastline for reference
     const coastline = new google.maps.Polyline({
@@ -92,48 +88,28 @@ function drawReceptionZone() {
     });
     
     coastline.setMap(map);
+    console.log('Coastline added');
 }
 
 function createReceptionZonePolygon() {
-    // Create a simple rectangular grid of reception zones seaward from Norway
-    // This approach creates obvious coverage areas that are easy to see
+    // Create simple test rectangles that should be very visible
+    console.log('Creating reception zone polygons...');
     
     const receptionAreas = [];
     
-    // Define several large rectangular areas covering Norwegian waters
-    // where LTE reception is available (>12km from coast)
+    // Large test rectangle in North Sea (should be very obvious)
+    const testArea = [
+        { lat: 60.0, lng: 2.0 },
+        { lat: 60.0, lng: 5.0 },
+        { lat: 58.0, lng: 5.0 },
+        { lat: 58.0, lng: 2.0 },
+        { lat: 60.0, lng: 2.0 }  // Close the polygon
+    ];
     
-    // North Sea reception areas
-    receptionAreas.push([
-        { lat: 62.0, lng: 1.0 },
-        { lat: 62.0, lng: 6.0 },
-        { lat: 57.5, lng: 6.0 },
-        { lat: 57.5, lng: 1.0 }
-    ]);
+    receptionAreas.push(testArea);
     
-    // Norwegian Sea reception areas
-    receptionAreas.push([
-        { lat: 72.0, lng: 8.0 },
-        { lat: 72.0, lng: 20.0 },
-        { lat: 65.0, lng: 20.0 },
-        { lat: 65.0, lng: 8.0 }
-    ]);
-    
-    // Barents Sea reception area
-    receptionAreas.push([
-        { lat: 72.0, lng: 20.0 },
-        { lat: 72.0, lng: 30.0 },
-        { lat: 68.0, lng: 30.0 },
-        { lat: 68.0, lng: 20.0 }
-    ]);
-    
-    // Western waters reception area
-    receptionAreas.push([
-        { lat: 65.0, lng: 0.0 },
-        { lat: 65.0, lng: 8.0 },
-        { lat: 60.0, lng: 8.0 },
-        { lat: 60.0, lng: 0.0 }
-    ]);
+    console.log('Created', receptionAreas.length, 'reception areas');
+    console.log('First area:', testArea);
     
     return receptionAreas;
 }
