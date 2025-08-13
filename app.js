@@ -4,18 +4,34 @@ let receptionZoneLine;
 let currentPosition = null;
 let googleMapsLoaded = false;
 let coverageCircle = null;
-let norwegianCoastline = []; // Will be populated from API
+let norwegianCoastline = []; // Will be populated from API or fallback
 let coastlineLoaded = false;
+
+// Environment detection
+const isStaticDeployment = !window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1');
+const API_BASE = isStaticDeployment ? '' : window.location.origin;
+
+// Fallback API key for static deployment (replace with your key)
+const STATIC_GOOGLE_MAPS_API_KEY = 'AIzaSyCVCP7JXnHdf3LUt-WE9uMVpzRuW6dlUYo';
 
 async function loadGoogleMaps() {
     console.log('🔧 DEBUG: loadGoogleMaps() called');
+    console.log('🔧 DEBUG: Environment detected:', isStaticDeployment ? 'Static Deployment' : 'Local Development');
     
     try {
-        // First, load the coastline data and API key
-        await Promise.all([
-            loadCoastlineData(),
-            loadAPIConfig()
-        ]);
+        if (isStaticDeployment) {
+            // Static deployment mode - use fallbacks
+            console.log('🔧 DEBUG: Using static deployment mode');
+            window.GOOGLE_MAPS_API_KEY = STATIC_GOOGLE_MAPS_API_KEY;
+            await loadFallbackCoastlineData();
+        } else {
+            // Local development mode - use APIs
+            console.log('🔧 DEBUG: Using local development mode');
+            await Promise.all([
+                loadCoastlineData(),
+                loadAPIConfig()
+            ]);
+        }
         
         const script = document.createElement('script');
         script.src = `https://maps.googleapis.com/maps/api/js?key=${window.GOOGLE_MAPS_API_KEY}&callback=initMap&loading=async`;
@@ -41,7 +57,7 @@ async function loadGoogleMaps() {
 
 async function loadAPIConfig() {
     try {
-        const response = await fetch('/api/config');
+        const response = await fetch(`${API_BASE}/api/config`);
         if (!response.ok) {
             throw new Error('Failed to load API configuration');
         }
@@ -57,7 +73,7 @@ async function loadAPIConfig() {
 async function loadCoastlineData() {
     try {
         console.log('🔧 DEBUG: Loading coastline data from API...');
-        const response = await fetch('/api/coastline');
+        const response = await fetch(`${API_BASE}/api/coastline`);
         if (!response.ok) {
             throw new Error('Failed to load coastline data');
         }
@@ -75,17 +91,38 @@ async function loadCoastlineData() {
         
     } catch (error) {
         console.error('❌ DEBUG: Error loading coastline data:', error);
-        // Fallback to basic points if API fails
-        norwegianCoastline = [
-            { lat: 71.1856, lng: 25.7843 },
-            { lat: 70.6632, lng: 23.6815 },
-            { lat: 69.9496, lng: 23.2717 },
-            { lat: 59.9139, lng: 10.7522 },
-            { lat: 58.1467, lng: 8.0014 }
-        ];
-        coastlineLoaded = true;
-        console.log('✅ DEBUG: Using fallback coastline points');
+        await loadFallbackCoastlineData();
     }
+}
+
+async function loadFallbackCoastlineData() {
+    console.log('🔧 DEBUG: Loading fallback coastline data for static deployment...');
+    
+    // Enhanced fallback coastline with more points for better accuracy in static mode
+    norwegianCoastline = [
+        { lat: 71.1856, lng: 25.7843 }, // Finnmark
+        { lat: 70.6632, lng: 23.6815 },
+        { lat: 69.9496, lng: 23.2717 },
+        { lat: 69.0575, lng: 20.2182 },
+        { lat: 68.8908, lng: 16.0304 },
+        { lat: 68.5089, lng: 14.6370 },
+        { lat: 67.2804, lng: 14.3656 },
+        { lat: 66.3142, lng: 12.4442 },
+        { lat: 65.8470, lng: 11.2280 },
+        { lat: 64.4734, lng: 11.3849 },
+        { lat: 63.4305, lng: 10.3951 }, // Trondheim area
+        { lat: 62.4722, lng: 6.1495 },
+        { lat: 61.1217, lng: 5.0218 },
+        { lat: 60.3913, lng: 5.3221 },  // Bergen area
+        { lat: 59.9139, lng: 10.7522 }, // Oslo area
+        { lat: 58.9700, lng: 9.2300 },
+        { lat: 58.1467, lng: 8.0014 },  // Kristiansand
+        { lat: 58.9667, lng: 5.7333 },  // Stavanger
+        { lat: 59.2181, lng: 5.0408 }
+    ];
+    
+    coastlineLoaded = true;
+    console.log(`✅ DEBUG: Loaded ${norwegianCoastline.length} fallback coastline points`);
 }
 
 function initMap() {
@@ -435,74 +472,98 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 
 async function checkReceptionStatus(position) {
     try {
-        console.log('🔧 DEBUG: Checking reception status via API...');
-        
-        const response = await fetch('/api/check-reception', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                latitude: position.lat,
-                longitude: position.lng
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('✅ DEBUG: Reception status received:', data);
-        
-        const statusElement = document.getElementById('status-text');
-        const distanceElement = document.getElementById('distance-info');
-        
-        // Remove existing coverage circle
-        if (coverageCircle) {
-            coverageCircle.setMap(null);
-        }
-        
-        if (data.inReceptionZone) {
-            statusElement.innerHTML = 
-                '<span class="status-indicator status-connected"></span>LTE Reception Available';
-            distanceElement.textContent = `${data.distanceToCoastKm}km from coast`;
-            
-            // Show green coverage area around user
-            coverageCircle = new google.maps.Circle({
-                center: position,
-                radius: 5000, // 5km radius around user position
-                strokeColor: '#28a745',
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: '#28a745',
-                fillOpacity: 0.2
-            });
-            coverageCircle.setMap(map);
-            
+        if (isStaticDeployment) {
+            console.log('🔧 DEBUG: Checking reception status using client-side calculation...');
+            checkReceptionStatusClientSide(position);
         } else {
-            statusElement.innerHTML = 
-                '<span class="status-indicator status-disconnected"></span>Outside Reception Zone';
-            distanceElement.textContent = data.message;
-            
-            // Show red "no coverage" area around user
-            coverageCircle = new google.maps.Circle({
-                center: position,
-                radius: 3000, // 3km radius around user position
-                strokeColor: '#dc3545',
-                strokeOpacity: 0.8,
-                strokeWeight: 2,
-                fillColor: '#dc3545',
-                fillOpacity: 0.1
-            });
-            coverageCircle.setMap(map);
+            console.log('🔧 DEBUG: Checking reception status via API...');
+            await checkReceptionStatusAPI(position);
         }
-        
     } catch (error) {
         console.error('❌ DEBUG: Error checking reception status:', error);
         document.getElementById('status-text').innerHTML = 
             '<span class="status-indicator status-unknown"></span>Unable to check status';
-        document.getElementById('distance-info').textContent = 'Error communicating with server';
+        document.getElementById('distance-info').textContent = 'Error checking reception status';
+    }
+}
+
+async function checkReceptionStatusAPI(position) {
+    const response = await fetch(`${API_BASE}/api/check-reception`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            latitude: position.lat,
+            longitude: position.lng
+        })
+    });
+    
+    if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('✅ DEBUG: Reception status received:', data);
+    
+    displayReceptionStatus(data.inReceptionZone, data.distanceToCoastKm, data.message, position);
+}
+
+function checkReceptionStatusClientSide(position) {
+    const distanceToCoast = calculateDistanceToCoast(position);
+    const inReceptionZone = distanceToCoast >= 12000; // 12km in meters
+    const distanceToCoastKm = Math.round(distanceToCoast / 1000 * 100) / 100;
+    
+    const message = inReceptionZone 
+        ? 'You are in the Telenor Maritime LTE reception zone'
+        : `You need to be ${Math.round((12000 - distanceToCoast) / 1000 * 100) / 100}km further offshore for LTE reception`;
+    
+    console.log('✅ DEBUG: Client-side reception status calculated:', { inReceptionZone, distanceToCoastKm, message });
+    displayReceptionStatus(inReceptionZone, distanceToCoastKm, message, position);
+}
+
+function displayReceptionStatus(inReceptionZone, distanceToCoastKm, message, position) {
+    const statusElement = document.getElementById('status-text');
+    const distanceElement = document.getElementById('distance-info');
+    
+    // Remove existing coverage circle
+    if (coverageCircle) {
+        coverageCircle.setMap(null);
+    }
+    
+    if (inReceptionZone) {
+        statusElement.innerHTML = 
+            '<span class="status-indicator status-connected"></span>LTE Reception Available';
+        distanceElement.textContent = `${distanceToCoastKm}km from coast`;
+        
+        // Show green coverage area around user
+        coverageCircle = new google.maps.Circle({
+            center: position,
+            radius: 5000, // 5km radius around user position
+            strokeColor: '#28a745',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#28a745',
+            fillOpacity: 0.2
+        });
+        coverageCircle.setMap(map);
+        
+    } else {
+        statusElement.innerHTML = 
+            '<span class="status-indicator status-disconnected"></span>Outside Reception Zone';
+        distanceElement.textContent = message;
+        
+        // Show red "no coverage" area around user
+        coverageCircle = new google.maps.Circle({
+            center: position,
+            radius: 3000, // 3km radius around user position
+            strokeColor: '#dc3545',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#dc3545',
+            fillOpacity: 0.1
+        });
+        coverageCircle.setMap(map);
     }
 }
 
