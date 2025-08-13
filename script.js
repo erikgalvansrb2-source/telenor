@@ -164,31 +164,46 @@ function displayCoastalLines() {
 function calculateLTEZone() {
     if (!coastalData) return;
 
-    // Create ocean coverage area (entire ocean is covered by LTE infrastructure)
-    const oceanBounds = [
+    // Create ocean-only coverage by defining world bounds with land as holes
+    const worldBounds = [
         { lat: 85, lng: -180 },
         { lat: 85, lng: 180 },
         { lat: -85, lng: 180 },
         { lat: -85, lng: -180 }
     ];
 
-    // Display the entire ocean as LTE coverage area
+    // Create holes for land masses
+    const landHoles = [];
+    
+    coastalData.features.forEach(feature => {
+        if (feature.geometry.type === 'Polygon') {
+            const coordinates = feature.geometry.coordinates[0].map(coord => ({
+                lat: coord[1],
+                lng: coord[0]
+            }));
+            landHoles.push(coordinates);
+        } else if (feature.geometry.type === 'MultiPolygon') {
+            feature.geometry.coordinates.forEach(polygonCoords => {
+                const coordinates = polygonCoords[0].map(coord => ({
+                    lat: coord[1],
+                    lng: coord[0]
+                }));
+                landHoles.push(coordinates);
+            });
+        }
+    });
+
+    // Create the ocean polygon with land areas as holes
     lteZonePolygon = new google.maps.Polygon({
-        paths: oceanBounds,
+        paths: [worldBounds, ...landHoles],
         strokeColor: '#2ecc71',
         strokeOpacity: 0.6,
-        strokeWeight: 2,
+        strokeWeight: 1,
         fillColor: '#2ecc71',
-        fillOpacity: 0.2
+        fillOpacity: 0.25
     });
 
     lteZonePolygon.setMap(map);
-    
-    // Add info window explaining the LTE zone
-    const infoWindow = new google.maps.InfoWindow({
-        content: '<div style="padding: 10px;"><strong>LTE Reception Zone</strong><br/>Coverage available throughout the ocean<br/>Signal active 12km+ from coastline</div>',
-        position: { lat: 0, lng: 0 }
-    });
 }
 
 // Update user position on map and info panel
