@@ -2,6 +2,7 @@ let map;
 let userMarker;
 let receptionZoneLine;
 let currentPosition = null;
+let googleMapsLoaded = false;
 
 const norwegianCoastline = [
     { lat: 71.1856, lng: 25.7843 },
@@ -24,6 +25,31 @@ const norwegianCoastline = [
     { lat: 58.9667, lng: 5.7333 },
     { lat: 59.2181, lng: 5.0408 }
 ];
+
+async function loadGoogleMaps() {
+    try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(config.error || 'Failed to load configuration');
+        }
+        
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${config.googleMapsApiKey}&callback=initMap`;
+        script.async = true;
+        script.defer = true;
+        script.onerror = () => {
+            document.getElementById('map').innerHTML = 
+                '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">Failed to load Google Maps</div>';
+        };
+        document.head.appendChild(script);
+    } catch (error) {
+        console.error('Error loading Google Maps configuration:', error);
+        document.getElementById('map').innerHTML = 
+            '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">Unable to load maps. Please check server configuration.</div>';
+    }
+}
 
 function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
@@ -208,3 +234,6 @@ async function checkReceptionStatus(position) {
         console.error('Error checking reception status:', error);
     }
 }
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', loadGoogleMaps);
