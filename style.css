@@ -1,0 +1,151 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f0f8ff;
+}
+
+#map-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+}
+
+#map {
+    flex: 1;
+    height: 100%;
+}
+
+#info-panel {
+    width: 300px;
+    background-color: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+}
+
+#info-panel h3 {
+    color: #2c3e50;
+    margin-bottom: 20px;
+    text-align: center;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+#location-info {
+    margin-bottom: 30px;
+    background-color: #ecf0f1;
+    padding: 15px;
+    border-radius: 8px;
+}
+
+#location-info p {
+    margin: 8px 0;
+    color: #34495e;
+    font-size: 14px;
+}
+
+#coordinates {
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+#reception-status {
+    font-weight: bold;
+}
+
+.status-good {
+    color: #27ae60;
+}
+
+.status-bad {
+    color: #e74c3c;
+}
+
+#legend {
+    margin-top: 20px;
+}
+
+#legend h4 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+    font-size: 13px;
+    color: #34495e;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+    border: 1px solid #bdc3c7;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.legend-color.coastal {
+    background-color: #8B4513;
+}
+
+.legend-color.lte-zone {
+    background-color: rgba(46, 204, 113, 0.3);
+    border: 2px solid #2ecc71;
+}
+
+.legend-color.user-position {
+    background-color: #e74c3c;
+    border-radius: 50%;
+    border: 2px solid #c0392b;
+}
+
+.loading-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    text-align: center;
+    color: #2c3e50;
+}
+
+.error-message {
+    background-color: rgba(231, 76, 60, 0.1);
+    border: 1px solid #e74c3c;
+    color: #c0392b;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    font-size: 12px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    #map-container {
+        flex-direction: column;
+    }
+    
+    #info-panel {
+        width: 100%;
+        height: 250px;
+        order: 2;
+    }
+    
+    #map {
+        order: 1;
+        height: calc(100vh - 250px);
+    }
+}
