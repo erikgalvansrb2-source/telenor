@@ -18,17 +18,8 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
-// Serve static files from root directory
-app.use(express.static('.', {
-  index: 'index.html',
-  dotfiles: 'deny',
-  setHeaders: function(res, path) {
-    if (path.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache');
-    }
-  }
-}));
 
+// API Routes (must be defined BEFORE static file serving)
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -104,6 +95,22 @@ app.post('/api/check-reception', (req, res) => {
     });
   }
 });
+
+// Handle favicon.ico requests
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).send();
+});
+
+// Serve static files from root directory (AFTER API routes)
+app.use(express.static('.', {
+  index: 'index.html',
+  dotfiles: 'deny',
+  setHeaders: function(res, path) {
+    if (path.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
 
 function calculateDistanceToCoast(position) {
   const coastalPoints = [
