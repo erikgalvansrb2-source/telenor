@@ -159,31 +159,36 @@ function displayCoastalLines() {
     });
 }
 
-// Calculate and display LTE reception zone (simplified approach)
+// Calculate and display LTE reception zone
+// LTE covers entire ocean but is only active 12km+ from coastline
 function calculateLTEZone() {
     if (!coastalData) return;
 
-    // Create a simplified LTE zone visualization
-    // In a real implementation, you would use more sophisticated geometric calculations
-    // For now, we'll create a general ocean area polygon as an example
-    
+    // Create ocean coverage area (entire ocean is covered by LTE infrastructure)
     const oceanBounds = [
-        { lat: 90, lng: -180 },
-        { lat: 90, lng: 180 },
-        { lat: -90, lng: 180 },
-        { lat: -90, lng: -180 }
+        { lat: 85, lng: -180 },
+        { lat: 85, lng: 180 },
+        { lat: -85, lng: 180 },
+        { lat: -85, lng: -180 }
     ];
 
+    // Display the entire ocean as LTE coverage area
     lteZonePolygon = new google.maps.Polygon({
         paths: oceanBounds,
         strokeColor: '#2ecc71',
         strokeOpacity: 0.6,
         strokeWeight: 2,
         fillColor: '#2ecc71',
-        fillOpacity: 0.15
+        fillOpacity: 0.2
     });
 
     lteZonePolygon.setMap(map);
+    
+    // Add info window explaining the LTE zone
+    const infoWindow = new google.maps.InfoWindow({
+        content: '<div style="padding: 10px;"><strong>LTE Reception Zone</strong><br/>Coverage available throughout the ocean<br/>Signal active 12km+ from coastline</div>',
+        position: { lat: 0, lng: 0 }
+    });
 }
 
 // Update user position on map and info panel
@@ -225,18 +230,21 @@ function updateReceptionStatus() {
         return;
     }
 
-    // Simplified distance calculation
-    // In a real implementation, you would calculate the actual distance to the nearest coastal point
     const distanceToCoast = calculateDistanceToCoast(userPosition);
-    
     const statusElement = document.getElementById('reception-status');
     statusElement.className = ''; // Clear previous classes
 
-    if (distanceToCoast > 12) {
-        statusElement.textContent = `LTE Available (${distanceToCoast.toFixed(1)}km from coast)`;
+    // Check if position is on land or at sea
+    const isAtSea = !isPointOnLand(userPosition);
+    
+    if (!isAtSea) {
+        statusElement.textContent = `On Land - No LTE Coverage`;
+        statusElement.classList.add('status-bad');
+    } else if (distanceToCoast >= 12) {
+        statusElement.textContent = `LTE Active (${distanceToCoast.toFixed(1)}km from coast)`;
         statusElement.classList.add('status-good');
     } else {
-        statusElement.textContent = `No LTE Signal (${distanceToCoast.toFixed(1)}km from coast)`;
+        statusElement.textContent = `LTE Inactive - Too close to coast (${distanceToCoast.toFixed(1)}km)`;
         statusElement.classList.add('status-bad');
     }
 }
@@ -292,6 +300,48 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 // Convert degrees to radians
 function toRadians(degrees) {
     return degrees * (Math.PI / 180);
+}
+
+// Check if a point is on land using ray casting algorithm
+function isPointOnLand(position) {
+    if (!coastalData || !coastalData.features) return false;
+
+    const lat = position.lat;
+    const lng = position.lng;
+
+    for (let feature of coastalData.features) {
+        if (feature.geometry.type === 'Polygon') {
+            if (pointInPolygon(lat, lng, feature.geometry.coordinates[0])) {
+                return true;
+            }
+        } else if (feature.geometry.type === 'MultiPolygon') {
+            for (let polygon of feature.geometry.coordinates) {
+                if (pointInPolygon(lat, lng, polygon[0])) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+// Point-in-polygon test using ray casting algorithm
+function pointInPolygon(lat, lng, polygon) {
+    let inside = false;
+    let j = polygon.length - 1;
+
+    for (let i = 0; i < polygon.length; j = i++) {
+        const xi = polygon[i][1]; // latitude
+        const yi = polygon[i][0]; // longitude
+        const xj = polygon[j][1]; // latitude
+        const yj = polygon[j][0]; // longitude
+
+        if (((yi > lng) !== (yj > lng)) && 
+            (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi)) {
+            inside = !inside;
+        }
+    }
+    return inside;
 }
 
 // Show error message
