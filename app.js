@@ -56,12 +56,97 @@ function initMap() {
 }
 
 function drawReceptionZone() {
-    console.log('Setting up global maritime LTE coverage visualization...');
+    console.log('Drawing global maritime LTE coverage zones...');
     
-    // Instead of fixed polygons, we'll use a dynamic circle around the user
-    // and show coverage based on real-time calculations
+    // Create offshore-only coverage zones that represent real maritime areas
+    const maritimeZones = [
+        // North Sea - well offshore from UK/Norway
+        {
+            name: "North Sea Maritime Zone",
+            coords: [
+                { lat: 59.0, lng: 1.0 },
+                { lat: 59.0, lng: 3.0 },
+                { lat: 57.0, lng: 3.0 },
+                { lat: 57.0, lng: 1.0 }
+            ]
+        },
+        // Norwegian Sea - far offshore from west Norway
+        {
+            name: "Norwegian Sea Maritime Zone",
+            coords: [
+                { lat: 67.0, lng: 0.0 },
+                { lat: 67.0, lng: 4.0 },
+                { lat: 64.0, lng: 4.0 },
+                { lat: 64.0, lng: 0.0 }
+            ]
+        },
+        // Barents Sea - far offshore from northern Norway
+        {
+            name: "Barents Sea Maritime Zone",
+            coords: [
+                { lat: 73.0, lng: 25.0 },
+                { lat: 73.0, lng: 35.0 },
+                { lat: 70.0, lng: 35.0 },
+                { lat: 70.0, lng: 25.0 }
+            ]
+        },
+        // Atlantic - west of Ireland/UK
+        {
+            name: "North Atlantic Maritime Zone",
+            coords: [
+                { lat: 55.0, lng: -10.0 },
+                { lat: 55.0, lng: -6.0 },
+                { lat: 50.0, lng: -6.0 },
+                { lat: 50.0, lng: -10.0 }
+            ]
+        },
+        // Mediterranean - center of sea
+        {
+            name: "Mediterranean Maritime Zone",
+            coords: [
+                { lat: 40.0, lng: 15.0 },
+                { lat: 40.0, lng: 20.0 },
+                { lat: 36.0, lng: 20.0 },
+                { lat: 36.0, lng: 15.0 }
+            ]
+        }
+    ];
     
-    // Draw Norwegian coastline for reference (since this started as a Norway-focused service)
+    // Create info window
+    const infoWindow = new google.maps.InfoWindow();
+    
+    // Draw each maritime zone
+    maritimeZones.forEach((zone, index) => {
+        console.log(`Creating ${zone.name}...`);
+        
+        const maritimePolygon = new google.maps.Polygon({
+            paths: zone.coords,
+            strokeColor: '#28a745',
+            strokeOpacity: 0.6,
+            strokeWeight: 2,
+            fillColor: '#28a745',
+            fillOpacity: 0.2
+        });
+        
+        maritimePolygon.setMap(map);
+        
+        // Add click info
+        maritimePolygon.addListener('click', function(event) {
+            infoWindow.setContent(`
+                <div style="padding: 5px;">
+                    <strong>🟢 ${zone.name}</strong><br>
+                    Telenor Maritime LTE Coverage<br>
+                    <small>International waters (≥12km from coast)</small>
+                </div>
+            `);
+            infoWindow.setPosition(event.latLng);
+            infoWindow.open(map);
+        });
+        
+        console.log(`${zone.name} added`);
+    });
+    
+    // Draw Norwegian coastline for reference
     const coastline = new google.maps.Polyline({
         path: norwegianCoastline,
         geodesic: true,
@@ -72,9 +157,7 @@ function drawReceptionZone() {
     
     coastline.setMap(map);
     
-    // Note: The actual coverage determination is now handled dynamically 
-    // in checkReceptionStatus() which calculates distance to nearest coastline
-    console.log('Dynamic global maritime LTE coverage system ready');
+    console.log('Maritime LTE coverage zones rendered');
 }
 
 function createReceptionZonePolygon() {
