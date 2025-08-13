@@ -92,29 +92,29 @@ function drawReceptionZone() {
     console.log('🔧 DEBUG: google.maps.Polygon available:', typeof google.maps.Polygon !== 'undefined');
     
     try {
-        // Create one global reception zone covering all oceans (≥12km from any coast)
-        const globalReceptionZone = [
-            { lat: 85, lng: -180 },   // North-West corner
-            { lat: 85, lng: 180 },    // North-East corner  
-            { lat: -85, lng: 180 },   // South-East corner
-            { lat: -85, lng: -180 },  // South-West corner
-            { lat: 85, lng: -180 }    // Close the polygon
+        // Create a more visible test polygon first - around Europe where the map is focused
+        const testReceptionZone = [
+            { lat: 70, lng: -10 },   // Northwest
+            { lat: 70, lng: 40 },    // Northeast  
+            { lat: 50, lng: 40 },    // Southeast
+            { lat: 50, lng: -10 },   // Southwest
+            { lat: 70, lng: -10 }    // Close the polygon
         ];
         
-        console.log('🔧 DEBUG: Global reception zone coordinates:', globalReceptionZone);
+        console.log('🔧 DEBUG: Test reception zone coordinates:', testReceptionZone);
         
         // Create info window
         const infoWindow = new google.maps.InfoWindow();
         console.log('✅ DEBUG: InfoWindow created');
         
-        console.log('🔧 DEBUG: Creating global polygon...');
+        console.log('🔧 DEBUG: Creating test polygon...');
         const globalPolygon = new google.maps.Polygon({
-            paths: globalReceptionZone,
-            strokeColor: '#28a745',
-            strokeOpacity: 0.8,  // Make more visible for debugging
-            strokeWeight: 3,     // Make thicker for debugging
-            fillColor: '#28a745',
-            fillOpacity: 0.3     // Make more visible for debugging
+            paths: testReceptionZone,
+            strokeColor: '#FF0000',  // Red for high visibility
+            strokeOpacity: 1.0,      // Full opacity
+            strokeWeight: 5,         // Very thick border
+            fillColor: '#FF0000',    // Red fill
+            fillOpacity: 0.5         // Very visible
         });
         console.log('✅ DEBUG: Global polygon object created');
         
@@ -124,11 +124,11 @@ function drawReceptionZone() {
         
         // Add click info
         globalPolygon.addListener('click', function(event) {
-            console.log('🔧 DEBUG: Global polygon clicked at:', event.latLng.toString());
+            console.log('🔧 DEBUG: Test polygon clicked at:', event.latLng.toString());
             infoWindow.setContent(`
                 <div style="padding: 5px;">
-                    <strong>🌍 Global Maritime LTE Coverage</strong><br>
-                    Telenor Maritime LTE available worldwide<br>
+                    <strong>🔴 TEST: Maritime LTE Coverage Zone</strong><br>
+                    This red area represents the global LTE coverage concept<br>
                     <small>Coverage in international waters ≥12km from any coastline</small>
                 </div>
             `);
